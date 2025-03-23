@@ -4,8 +4,10 @@ import os
 from langchain_groq import ChatGroq
 from typing_extensions import TypedDict
 from langgraph.graph import add_messages, StateGraph, END, START
-from langchain_core.messages import AIMessage, HumanMessage
-from typing import Annotated, List
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from typing import Annotated, List, Dict, Any
+from langdetect import detect
+from langchain_community.tools.tavily_search import TavilySearchResults
 
 ## Langsmith Tracking
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -15,6 +17,7 @@ os.environ["LANGCHAIN_PROJECT"]="Blog Generator Agent"
 class BlogState(TypedDict):
     topic: str
     title: str
+    search_results: Annotated[List[Dict[str, Any]], add_messages]
     blog_content: Annotated[List, add_messages]
     reviewed_content: Annotated[List, add_messages]
     is_blog_ready: str
@@ -27,19 +30,47 @@ if 'graph' not in st.session_state:
 if 'graph_image' not in st.session_state:
     st.session_state.graph_image = None
 
+# Helper function to detect English language
+def is_english(text):
+    # Ensure we have enough text to analyze
+    if not text or len(text.strip()) < 50:
+        return False
+        
+    try:
+        # Try primary language detection
+        return detect(text) == 'en'
+    except:
+        # If detection fails, use a more robust approach
+        common_english_words = ['the', 'and', 'in', 'to', 'of', 'is', 'for', 'with', 'on', 'that', 
+                              'this', 'are', 'was', 'be', 'have', 'it', 'not', 'they', 'by', 'from']
+        text_lower = text.lower()
+        # Count occurrences of common English words
+        english_word_count = sum(1 for word in common_english_words if f" {word} " in f" {text_lower} ")
+        # Calculate ratio of English words to text length
+        text_words = len(text_lower.split())
+        if text_words == 0:  # Avoid division by zero
+            return False
+            
+        english_ratio = english_word_count / min(20, text_words)  # Cap at 20 to avoid skew
+        return english_word_count >= 5 or english_ratio > 0.25  # More stringent criteria
+    
 def init_graph(api_key: str):
     
-    st.session_state.llm  = ChatGroq(model="qwen-2.5-32b", api_key=api_key)
+    global llm
+    llm  = ChatGroq(model="qwen-2.5-32b", api_key=api_key)
     
     builder = StateGraph(BlogState)
     
     builder.add_node("title_generator", generate_title)
+    builder.add_node("search_web", search_web)
     builder.add_node("content_generator", generate_content)
     builder.add_node("content_reviewer", review_content)
-    builder.add_node("quality_check", evaluate_content)
-    
+    builder.add_node("quality_check", evaluate_content)  # New evaluation node
+
     builder.add_edge(START, "title_generator")
+    builder.add_edge(START, "search_web")
     builder.add_edge("title_generator", "content_generator")
+    builder.add_edge("search_web", "content_generator")
     builder.add_edge("content_generator", "content_reviewer")
     builder.add_edge("content_reviewer", "quality_check")
     
@@ -57,14 +88,49 @@ def generate_title(state: BlogState):
     - Attention-grabbing
     - Between 6-12 words"""
     
-    with st.status("🚀 Generating Titles..."):
-        response = st.session_state.llm.invoke(prompt)
+    with st.status("🚀 Generating Titles and Searching Web..."):
+        response = llm.invoke(prompt)
         state["title"] = response.content.split("\n")[0].strip('"')
         st.write(f"Selected title: **{state['title']}**")
     return state
 
+def search_web(state: BlogState):
+    
+    search_tool = TavilySearchResults(max_results=2)
+    
+    # Create search query with date to get recent news
+    query = f"Latest data on {state["topic"]}"
+    
+    # Execute search
+    search_results = search_tool.invoke({"query": query})
+    
+    # Filter out YouTube results and non-English content
+    filtered_results = []
+    for result in search_results:
+        if "youtube.com" not in result.get("url", "").lower():
+            # Check if content is in English
+            content = result.get("content", "") + " " + result.get("title", "")
+            if is_english(content):
+                filtered_results.append(result)
+    
+    st.write(f"Web Search Results: **{state['search_results']}**")
+    
+    with st.status("🚀 Searching Web..."):
+        st.write(f"Selected title: **{filtered_results}**")
+   
+    return {
+    "search_results": [
+        {
+            "role": "system",
+            "content": f"{result['title']}\n{result['content']}\n(Source: {result['url']})"
+        }
+        for result in filtered_results
+        ]
+    }
+
+
 def generate_content(state: BlogState):
-    prompt = f"""Write a comprehensive blog post titled "{state["title"]}" with:
+    prompt = f"""Write a comprehensive blog post titled "{state["title"]}" and based on the web search results {state["search_results"]} with:
     1. Engaging introduction with hook
     2. 3-5 subheadings with detailed content
     3. Practical examples/statistics
@@ -73,7 +139,7 @@ def generate_content(state: BlogState):
     Style: Professional yet conversational (Flesch-Kincaid 60-70). Use markdown formatting"""
     
     with st.status("📝 Generating Content..."):
-        response = st.session_state.llm.invoke(prompt)
+        response = llm.invoke(prompt)
         state["blog_content"].append(AIMessage(content=response.content))
         st.markdown(response.content)
     return state
@@ -88,7 +154,7 @@ def review_content(state: BlogState):
     Provide specific improvement suggestions. Content:\n{content}"""
     
     with st.status("🔍 Reviewing Content..."):
-        feedback = st.session_state.llm.invoke(prompt)
+        feedback = llm.invoke(prompt)
         state["reviewed_content"].append(HumanMessage(content=feedback.content))
         st.write(feedback.content)
     return state
@@ -103,7 +169,7 @@ def evaluate_content(state: BlogState):
     Answer only Pass or Fail:"""
     
     with st.status("✅ Evaluating Quality..."):
-        response = st.session_state.llm.invoke(prompt)
+        response = llm.invoke(prompt)
         verdict = response.content.strip().upper()
         state["is_blog_ready"] = "Pass" if "PASS" in verdict else "Fail"
         state["reviewed_content"].append(AIMessage(
@@ -131,10 +197,20 @@ with st.sidebar:
     api_key = st.text_input("Groq API Key:", 
                           type="password",
                           value=os.getenv("GROQ_API_KEY", ""))
-    # Validate API key
+    
+     # Validate API key
     if not api_key:
         st.warning("⚠️ Please enter your GROQ API key to proceed. Don't have? refer : https://console.groq.com/keys ")
+        
+    # Groq API Key Input
+    tavily_api_key = os.environ["TAVILY_API_KEY"] =  st.session_state["TAVILY_API_KEY"] = st.text_input("Tavily API Key:", 
+                          type="password",
+                          value=os.getenv("TAVILY_API_KEY", ""))
     
+    # Validate API key
+    if not tavily_api_key:
+        st.warning("⚠️ Please enter your TAVILY_API_KEY key to proceed. Don't have? refer : https://app.tavily.com/home")
+                    
     if st.button("Reset Session"):
         st.session_state.clear()
         st.rerun()
@@ -156,9 +232,11 @@ if generate_btn:
         
         # Initialize and run graph
         st.session_state.graph = init_graph(api_key)
+        
         st.session_state.blog_state = BlogState(
             topic=topic,
             title="",
+            search_results=[],
             blog_content=[],
             reviewed_content=[],
             is_blog_ready=""
