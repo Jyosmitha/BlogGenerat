@@ -185,6 +185,7 @@ st.markdown("""
 
 # Sidebar components
 with st.sidebar:
+
     st.subheader("Configuration")
         
     # Groq API Key Input
@@ -208,6 +209,10 @@ with st.sidebar:
     if st.button("Reset Session"):
         st.session_state.clear()
         st.rerun()
+        
+        
+    st.subheader("Workflow Overview")
+    st.image("workflow_graph.png")
         
 # Main content
 topic = st.text_input("Enter your blog topic:", placeholder="Generative AI in Healthcare")
