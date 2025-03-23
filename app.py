@@ -98,7 +98,7 @@ def search_web(state: BlogState):
     search_tool = TavilySearchResults(max_results=2)
     
     # Create search query with date to get recent news
-    query = f"Latest data on {state["topic"]}"
+    query = f"Latest data on {state['topic']}"
     
     # Execute search
     search_results = search_tool.invoke({"query": query})
@@ -124,7 +124,7 @@ def search_web(state: BlogState):
 
 
 def generate_content(state: BlogState):
-    prompt = f"""Write a comprehensive blog post titled "{state["title"]}" and based on the web search results {state["search_results"]} with:
+    prompt = f"""Write a comprehensive blog post titled "{state['title']}" and based on the web search results {state['search_results']} with:
     1. Engaging introduction with hook
     2. 3-5 subheadings with detailed content
     3. Practical examples/statistics
