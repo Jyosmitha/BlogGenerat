@@ -7,6 +7,7 @@ from langgraph.graph import add_messages, StateGraph, END, START
 from langchain_core.messages import AIMessage, HumanMessage
 from typing import Annotated, List
 
+
 # Load environment variables
 load_dotenv()
 
@@ -27,6 +28,8 @@ if 'blog_state' not in st.session_state:
     st.session_state.blog_state = None
 if 'graph' not in st.session_state:
     st.session_state.graph = None
+if 'graph_image' not in st.session_state:
+    st.session_state.graph_image = None
 
 def init_graph():
     builder = StateGraph(BlogState)
@@ -114,49 +117,75 @@ def route_based_on_verdict(state: BlogState):
     return "Pass" if state["is_blog_ready"] == "Pass" else "Fail"
 
 # Streamlit UI components
-st.title("AI Blog Generation Assistant")
-st.markdown("### Generate high-quality blog posts with AI-powered review process")
+st.title("🚀 BlogForge Pro")
+st.markdown("""
+**Smart Blog Generation with Auto-Refinement**  
+*From first draft to final edit - AI-assisted writing meets professional standards*  
+✓ SEO-Optimized Structure ✓ Grammar & Style Checks ✓ Feedback-Driven Revisions  
+""")
 
-topic = st.text_input("Enter your blog topic:", placeholder="Generative AI in Healthcare")
-generate_btn = st.button("Generate Blog Post")
-
-
-if generate_btn and topic:
-    st.session_state.graph = init_graph()
-    st.session_state.blog_state = BlogState(
-        topic=topic,
-        title="",
-        blog_content=[],
-        reviewed_content=[],
-        is_blog_ready=""
-    )
+# Sidebar components
+def show_sidebar():
     
-    # Execute the graph
-    final_state = st.session_state.graph.invoke(st.session_state.blog_state)
-    st.session_state.blog_state = final_state
-    
-    # Display results
-    st.success("Blog post generation complete!")
-    st.markdown("---")
-    st.subheader("Final Blog Post")
-    st.markdown(final_state["blog_content"][-1].content)
-    
-    st.markdown("---")
-    st.subheader("Quality Assurance Report")
-    st.write(final_state["reviewed_content"][-1].content)
-    # st.write(f"Final Verdict: {final_state['is_blog_ready']}")
-    
-
-elif generate_btn and not topic:
-    st.error("Please enter a blog topic to get started!")
-
-if st.session_state.blog_state:
     with st.sidebar:
-        st.subheader("Generation Details")
-        st.write(f"**Topic:** {st.session_state.blog_state['topic']}")
-        st.write(f"**Status**: {'✅ Approved' if st.session_state.blog_state['is_blog_ready'] == 'Pass' else '❌ Needs Revision'}")
-        st.write(f"**Review Cycles**: {len(st.session_state.blog_state['reviewed_content']) - 1}")
+        st.subheader("Configuration")
+        
+        # Groq API Key Input
+        api_key  = st.session_state["GROQ_API_KEY"] = st.text_input("Groq API Key",type="password")
+        # Validate API key
+        if not api_key:
+            st.warning("⚠️ Please enter your GROQ API key to proceed. Don't have? refer : https://console.groq.com/keys ")
+        
         
         if st.button("Reset Session"):
             st.session_state.clear()
             st.rerun()
+
+show_sidebar()
+# Main content
+topic = st.text_input("Enter your blog topic:", placeholder="Generative AI in Healthcare")
+generate_btn = st.button("Generate Blog Post")
+
+if generate_btn:
+    
+    if not topic:
+        st.error("Please enter a blog topic!")
+        st.stop()
+    
+    try:
+        st.session_state.llm = ChatGroq(model="qwen-2.5-32b")
+        
+        # Initialize and run graph
+        st.session_state.graph = init_graph()
+        st.session_state.blog_state = BlogState(
+            topic=topic,
+            title="",
+            blog_content=[],
+            reviewed_content=[],
+            is_blog_ready=""
+        )
+        
+        # Execute the graph
+        final_state = st.session_state.graph.invoke(st.session_state.blog_state)
+        st.session_state.blog_state = final_state
+        
+        
+        # Display results
+        st.success("Blog post generation complete!")
+        st.markdown("---")
+        st.subheader("Final Blog Post")
+        st.markdown(final_state["blog_content"][-1].content)
+        
+        st.markdown("---")
+        st.subheader("Quality Assurance Report")
+        st.write(final_state["reviewed_content"][-1].content)
+        
+        if st.session_state.blog_state:
+            st.markdown("---")
+            st.subheader("Generation Status")
+            st.write(f"**Topic:** {st.session_state.blog_state['topic']}")
+            st.write(f"**Status**: {'✅ Approved' if st.session_state.blog_state['is_blog_ready'] == 'Pass' else '❌ Needs Revision'}")
+            st.write(f"**Review Cycles**: {len(st.session_state.blog_state['reviewed_content']) - 1}")
+        
+    except Exception as e:
+        st.error(f"Error in blog generation: {str(e)}")
