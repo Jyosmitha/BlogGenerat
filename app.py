@@ -8,13 +8,6 @@ from langchain_core.messages import AIMessage, HumanMessage
 from typing import Annotated, List
 
 
-# Load environment variables
-load_dotenv()
-
-# Set up Groq client
-os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
-llm = ChatGroq(model="qwen-2.5-32b")
-
 # Define BlogState TypedDict
 class BlogState(TypedDict):
     topic: str
@@ -31,7 +24,10 @@ if 'graph' not in st.session_state:
 if 'graph_image' not in st.session_state:
     st.session_state.graph_image = None
 
-def init_graph():
+def init_graph(api_key: str):
+    
+    st.session_state.llm  = ChatGroq(model="qwen-2.5-32b", api_key=api_key)
+    
     builder = StateGraph(BlogState)
     
     builder.add_node("title_generator", generate_title)
@@ -59,7 +55,7 @@ def generate_title(state: BlogState):
     - Between 6-12 words"""
     
     with st.status("🚀 Generating Titles..."):
-        response = llm.invoke(prompt)
+        response = st.session_state.llm.invoke(prompt)
         state["title"] = response.content.split("\n")[0].strip('"')
         st.write(f"Selected title: **{state['title']}**")
     return state
@@ -74,7 +70,7 @@ def generate_content(state: BlogState):
     Style: Professional yet conversational (Flesch-Kincaid 60-70). Use markdown formatting"""
     
     with st.status("📝 Generating Content..."):
-        response = llm.invoke(prompt)
+        response = st.session_state.llm.invoke(prompt)
         state["blog_content"].append(AIMessage(content=response.content))
         st.markdown(response.content)
     return state
@@ -89,7 +85,7 @@ def review_content(state: BlogState):
     Provide specific improvement suggestions. Content:\n{content}"""
     
     with st.status("🔍 Reviewing Content..."):
-        feedback = llm.invoke(prompt)
+        feedback = st.session_state.llm.invoke(prompt)
         state["reviewed_content"].append(HumanMessage(content=feedback.content))
         st.write(feedback.content)
     return state
@@ -104,7 +100,7 @@ def evaluate_content(state: BlogState):
     Answer only Pass or Fail:"""
     
     with st.status("✅ Evaluating Quality..."):
-        response = llm.invoke(prompt)
+        response = st.session_state.llm.invoke(prompt)
         verdict = response.content.strip().upper()
         state["is_blog_ready"] = "Pass" if "PASS" in verdict else "Fail"
         state["reviewed_content"].append(AIMessage(
@@ -129,7 +125,9 @@ with st.sidebar:
     st.subheader("Configuration")
         
     # Groq API Key Input
-    api_key  = st.session_state["GROQ_API_KEY"] = st.text_input("Groq API Key",type="password")
+    api_key = st.text_input("Groq API Key:", 
+                          type="password",
+                          value=os.getenv("GROQ_API_KEY", ""))
     # Validate API key
     if not api_key:
         st.warning("⚠️ Please enter your GROQ API key to proceed. Don't have? refer : https://console.groq.com/keys ")
@@ -143,16 +141,18 @@ topic = st.text_input("Enter your blog topic:", placeholder="Generative AI in He
 generate_btn = st.button("Generate Blog Post")
 
 if generate_btn:
+    if not api_key:
+        st.error("Please provide a Groq API key in the sidebar!")
+        st.stop()
     
     if not topic:
         st.error("Please enter a blog topic!")
         st.stop()
     
     try:
-        st.session_state.llm = ChatGroq(model="qwen-2.5-32b", groq_api_key=api_key)
         
         # Initialize and run graph
-        st.session_state.graph = init_graph()
+        st.session_state.graph = init_graph(api_key)
         st.session_state.blog_state = BlogState(
             topic=topic,
             title="",
