@@ -7,6 +7,9 @@ from langgraph.graph import add_messages, StateGraph, END, START
 from langchain_core.messages import AIMessage, HumanMessage
 from typing import Annotated, List
 
+## Langsmith Tracking
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_PROJECT"]="Blog Generator Agent"
 
 # Define BlogState TypedDict
 class BlogState(TypedDict):
