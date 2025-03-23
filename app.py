@@ -125,23 +125,19 @@ st.markdown("""
 """)
 
 # Sidebar components
-def show_sidebar():
+with st.sidebar:
+    st.subheader("Configuration")
+        
+    # Groq API Key Input
+    api_key  = st.session_state["GROQ_API_KEY"] = st.text_input("Groq API Key",type="password")
+    # Validate API key
+    if not api_key:
+        st.warning("⚠️ Please enter your GROQ API key to proceed. Don't have? refer : https://console.groq.com/keys ")
     
-    with st.sidebar:
-        st.subheader("Configuration")
+    if st.button("Reset Session"):
+        st.session_state.clear()
+        st.rerun()
         
-        # Groq API Key Input
-        api_key  = st.session_state["GROQ_API_KEY"] = st.text_input("Groq API Key",type="password")
-        # Validate API key
-        if not api_key:
-            st.warning("⚠️ Please enter your GROQ API key to proceed. Don't have? refer : https://console.groq.com/keys ")
-        
-        
-        if st.button("Reset Session"):
-            st.session_state.clear()
-            st.rerun()
-
-show_sidebar()
 # Main content
 topic = st.text_input("Enter your blog topic:", placeholder="Generative AI in Healthcare")
 generate_btn = st.button("Generate Blog Post")
@@ -153,7 +149,7 @@ if generate_btn:
         st.stop()
     
     try:
-        st.session_state.llm = ChatGroq(model="qwen-2.5-32b")
+        st.session_state.llm = ChatGroq(model="qwen-2.5-32b", api_key=api_key)
         
         # Initialize and run graph
         st.session_state.graph = init_graph()
