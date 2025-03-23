@@ -149,7 +149,7 @@ if generate_btn:
         st.stop()
     
     try:
-        st.session_state.llm = ChatGroq(model="qwen-2.5-32b", api_key=api_key)
+        st.session_state.llm = ChatGroq(model="qwen-2.5-32b", groq_api_key=api_key)
         
         # Initialize and run graph
         st.session_state.graph = init_graph()
