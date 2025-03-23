@@ -88,10 +88,9 @@ def generate_title(state: BlogState):
     - Attention-grabbing
     - Between 6-12 words"""
     
-    with st.status("🚀 Generating Titles and Searching Web..."):
-        response = llm.invoke(prompt)
-        state["title"] = response.content.split("\n")[0].strip('"')
-        st.write(f"Selected title: **{state['title']}**")
+    
+    response = llm.invoke(prompt)
+    state["title"] = response.content.split("\n")[0].strip('"')
     return state
 
 def search_web(state: BlogState):
@@ -112,11 +111,6 @@ def search_web(state: BlogState):
             content = result.get("content", "") + " " + result.get("title", "")
             if is_english(content):
                 filtered_results.append(result)
-    
-    st.write(f"Web Search Results: **{state['search_results']}**")
-    
-    with st.status("🚀 Searching Web..."):
-        st.write(f"Selected title: **{filtered_results}**")
    
     return {
     "search_results": [
@@ -252,6 +246,14 @@ if generate_btn:
         st.markdown("---")
         st.subheader("Final Blog Post")
         st.markdown(final_state["blog_content"][-1].content)
+        
+        st.markdown("---")
+        st.subheader("Generated Title")
+        st.write(final_state["title"])
+        
+        st.markdown("---")
+        st.subheader("Web Search Results")
+        st.write(final_state["search_results"][-1].content)
         
         st.markdown("---")
         st.subheader("Quality Assurance Report")
