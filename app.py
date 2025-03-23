@@ -61,11 +61,11 @@ def init_graph(api_key: str):
     
     builder = StateGraph(BlogState)
     
-    builder.add_node("title_generator", generate_title)
-    builder.add_node("search_web", search_web)
-    builder.add_node("content_generator", generate_content)
-    builder.add_node("content_reviewer", review_content)
-    builder.add_node("quality_check", evaluate_content)  # New evaluation node
+    builder.add_node("title_generator", generate_title) ## Generate Title
+    builder.add_node("search_web", search_web) ## Search Web using Tavily based in the topic
+    builder.add_node("content_generator", generate_content) ## Generate Content using the output of title_generator and search_web
+    builder.add_node("content_reviewer", review_content) ## Review Content and generate feedback
+    builder.add_node("quality_check", evaluate_content) ## Validate the content based on feedback and generate verdict
 
     builder.add_edge(START, "title_generator")
     builder.add_edge(START, "search_web")
@@ -176,7 +176,7 @@ def route_based_on_verdict(state: BlogState):
     return "Pass" if state["is_blog_ready"] == "Pass" else "Fail"
 
 # Streamlit UI components
-st.title("🚀 BlogForge Pro")
+st.title("🚀 BlogForge Pro Agent")
 st.markdown("""
 **Smart Blog Generation with Auto-Refinement**  
 *From first draft to final edit - AI-assisted writing meets professional standards*  
