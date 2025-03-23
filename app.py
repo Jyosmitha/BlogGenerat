@@ -4,7 +4,7 @@ import os
 from langchain_groq import ChatGroq
 from typing_extensions import TypedDict
 from langgraph.graph import add_messages, StateGraph, END, START
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage
 from typing import Annotated, List, Dict, Any
 from langdetect import detect
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -149,7 +149,7 @@ def review_content(state: BlogState):
     
     with st.status("🔍 Reviewing Content..."):
         feedback = llm.invoke(prompt)
-        state["reviewed_content"].append(HumanMessage(content=feedback.content))
+        state["reviewed_content"].append(AIMessage(content=feedback.content))
         st.write(feedback.content)
     return state
 
