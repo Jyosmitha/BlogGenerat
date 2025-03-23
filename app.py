@@ -165,7 +165,7 @@ def evaluate_content(state: BlogState):
     with st.status("✅ Evaluating Quality..."):
         response = llm.invoke(prompt)
         verdict = response.content.strip().upper()
-        state["is_blog_ready"] = "Pass" if "PASS" in verdict else "Fail"
+        state["is_blog_ready"] = "Pass" if "PASS" or "Pass" in verdict else "Fail"
         state["reviewed_content"].append(AIMessage(
             content=f"Verdict: {response.content}"
         ))
