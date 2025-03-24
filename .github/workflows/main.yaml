@@ -18,4 +18,4 @@ jobs:
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://msaifee:$HF_TOKEN@huggingface.co/spaces/msaifee/BlogGeneratorAgent main
+        run: git push --force https://Jyosmitha:$HF_TOKEN@huggingface.co/spaces/msaifee/BlogGeneration main
