@@ -10,4 +10,3 @@ pinned: false
 license: apache-2.0
 short_description: Smart Blog Generation with Auto-Refinement
 ---
-"# BlogGenerat" 
