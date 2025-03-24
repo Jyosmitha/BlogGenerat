@@ -229,7 +229,7 @@ if generate_btn:
     
     try:
         
-        # Initialize and run graph
+        # Initialize and run graph flow
         st.session_state.graph = init_graph(api_key)
         
         st.session_state.blog_state = BlogState(
