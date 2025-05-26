@@ -252,17 +252,17 @@ if generate_btn:
         st.subheader("Final Blog Post")
         st.markdown(final_state["blog_content"][-1].content)
         
-        st.markdown("---")
-        st.subheader("Generated Title")
-        st.write(final_state["title"])
+        # st.markdown("---")
+        # st.subheader("Generated Title")
+        # st.write(final_state["title"])
         
         st.markdown("---")
         st.subheader("Web Search Results")
         st.write(final_state["search_results"][-1].content)
         
-        st.markdown("---")
-        st.subheader("Quality Assurance Report")
-        st.write(final_state["reviewed_content"][-1].content)
+        # st.markdown("---")
+        # st.subheader("Quality Assurance Report")
+        # st.write(final_state["reviewed_content"][-1].content)
         
         if st.session_state.blog_state:
             st.markdown("---")
