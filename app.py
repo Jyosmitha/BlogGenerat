@@ -57,7 +57,7 @@ def is_english(text):
 def init_graph(api_key: str):
     
     global llm
-    llm  = ChatGroq(model="llama-3.3-70b-versatile", api_key=api_key)
+    llm  = ChatGroq(model="qwen-2.5-32b", api_key=api_key)
     
     builder = StateGraph(BlogState)
     
@@ -229,7 +229,7 @@ if generate_btn:
     
     try:
         
-        # Initialize and run graph flow
+        # Initialize and run graph
         st.session_state.graph = init_graph(api_key)
         
         st.session_state.blog_state = BlogState(
