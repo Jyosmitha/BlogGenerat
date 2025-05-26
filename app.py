@@ -57,7 +57,7 @@ def is_english(text):
 def init_graph(api_key: str):
     
     global llm
-    llm  = ChatGroq(model="llama-4-scout-17b-16e-instruct", api_key=api_key)
+    llm  = ChatGroq(model="deepseek-r1-distill-qwen-32b", api_key=api_key)
     
     builder = StateGraph(BlogState)
     
