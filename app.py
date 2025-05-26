@@ -57,7 +57,7 @@ def is_english(text):
 def init_graph(api_key: str):
     
     global llm
-    llm  = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct", api_key=api_key)
+    llm  = ChatGroq(model="llama-4-scout-17b-16e-instruct", api_key=api_key)
     
     builder = StateGraph(BlogState)
     
@@ -101,7 +101,7 @@ def search_web(state: BlogState):
     query = f"Latest data on {state['topic']}"
     
     # Execute search
-    search_results = search_tool.invoke({"query": query})["results"]
+    search_results = search_tool.invoke({"query": query})
     
     # Filter out YouTube results and non-English content
     filtered_results = []
