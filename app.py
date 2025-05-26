@@ -101,7 +101,7 @@ def search_web(state: BlogState):
     query = f"Latest data on {state['topic']}"
     
     # Execute search
-    search_results = search_tool.invoke({"query": query})
+    search_results = search_tool.invoke({"query": query})["results"]
     
     # Filter out YouTube results and non-English content
     filtered_results = []
