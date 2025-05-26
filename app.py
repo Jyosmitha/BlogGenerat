@@ -252,9 +252,9 @@ if generate_btn:
         st.subheader("Final Blog Post")
         st.markdown(final_state["blog_content"][-1].content)
         
-        st.markdown("---")
-        st.subheader("Generated Title")
-        st.write(final_state["title"])
+        # st.markdown("---")
+        # st.subheader("Generated Title")
+        # st.write(final_state["title"])
         
         st.markdown("---")
         st.subheader("Web Search Results")
