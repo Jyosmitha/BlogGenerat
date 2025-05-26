@@ -57,7 +57,7 @@ def is_english(text):
 def init_graph(api_key: str):
     
     global llm
-    llm  = ChatGroq(model="llama3-8b-8192", api_key=api_key)
+    llm  = ChatGroq(model="qwen-qwq-32b", api_key=api_key)
     
     builder = StateGraph(BlogState)
     
@@ -260,9 +260,9 @@ if generate_btn:
         st.subheader("Web Search Results")
         st.write(final_state["search_results"][-1].content)
         
-        # st.markdown("---")
-        # st.subheader("Quality Assurance Report")
-        # st.write(final_state["reviewed_content"][-1].content)
+        st.markdown("---")
+        st.subheader("Quality Assurance Report")
+        st.write(final_state["reviewed_content"][-1].content)
         
         if st.session_state.blog_state:
             st.markdown("---")
