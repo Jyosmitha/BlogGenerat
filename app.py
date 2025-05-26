@@ -57,7 +57,7 @@ def is_english(text):
 def init_graph(api_key: str):
     
     global llm
-    llm  = ChatGroq(model="llama-3.3-70b-versatile", api_key=api_key)
+    llm  = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct", api_key=api_key)
     
     builder = StateGraph(BlogState)
     
